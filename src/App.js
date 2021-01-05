@@ -1,5 +1,5 @@
 import React from 'react';
-
+import './App.css';
 
 class App extends React.Component {
   constructor(props) {
@@ -11,12 +11,37 @@ class App extends React.Component {
     }
   }
 
-  componentDidMount(){
+  updateQuote(response) {
     this.setState({
-      content: "a quote we made up",
-      author: "anon",
-      tags: ["quote", "stuff", "blah"]
-    })  
+      content: response.content,
+      author: response.author,
+      tags: response.tags
+    })
+  }
+
+  status(response) {
+    if (response.status >= 200 && response.status < 300) {
+      return Promise.resolve(response)
+    } else {
+      return Promise.reject(new Error(response.statusText))
+    }
+  }
+
+  componentDidMount() {
+    this.setState({
+      content: "....loading",
+      author: "",
+      tags: []
+    })
+
+    fetch("https://api.quotable.io/random")
+      .then(this.status)
+      .then((response) => response.json())
+      .then((response) => this.updateQuote(response))
+      .catch((error) => {
+        console.error(error);
+        alert(error);
+      })
   }
 
   render() {
