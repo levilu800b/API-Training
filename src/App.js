@@ -12,7 +12,8 @@ class App extends React.Component {
       fetching: false,
       authors: [],
       lastItemIndex: 0,
-      pageSize: 20
+      pageSize: 20,
+      authorId: undefined
     }
     this.apiClient = new ApiClient()
   }
@@ -33,13 +34,23 @@ class App extends React.Component {
       fetching: true
     })
 
-    this.apiClient.getQuote()
-      .then((response) => { this.updateQuote(response.data) })
+    if (this.state.authorId) {
+      this.apiClient.getquoteByAuthor(this.state.authorId)
+      .then((response) => { this.updateQuote(response.data.results[Math.floor(Math.random()*response.data.count)]) })
       .finally(() => {
         this.setState({
           fetching: false
         })
       })
+  } else {
+    this.apiClient.getQuote()
+    .then((response) => { this.updateQuote(response.data) })
+    .finally(() => {
+      this.setState({
+        fetching: false
+      })
+  })
+}
   }
 
   listAuthors(skip=0) {
@@ -52,7 +63,10 @@ class App extends React.Component {
   }
 
   updateAuthors(response) {
-    const authors = response.results.map((author) => ({ name: author.name, count: author.quoteCount }))
+    const authors = response.results.map((author) => {
+      console.log(author);
+      return ({ name: author.name, count: author.quoteCount, id: author._id })
+    })
     this.setState({
       authors,
       lastItemIndex: response.lastItemIndex
@@ -72,15 +86,20 @@ class App extends React.Component {
     this.setState({
       pageSize: e.target.value
     }, () => this.listAuthors())
+  }
 
+  selectAuthor(authorId) {
+    this.selectState({
+      authorId
+    }, () => this.refreshQuote() )
   }
 
   makeAuthorTable() {
     return this.state.authors.map((author, i) => {
       return (
         <tr key={i}>
-          <td>
-            {author.name}
+          <td style={{ backgroundColor: (author.id === this.state.authorId) ? "green" : ""}}>
+            <a onClick={() => this.selectAuthor(author.id)}>{author.name}</a>
           </td>
           <td>
             {author.count}
